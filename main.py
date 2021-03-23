@@ -11,6 +11,18 @@ app = FastAPI()
 
 JWT_SECRET = 'myjwtsecret'
 
+
+class items(Model):
+    item_name=fields.CharField(128, unique=True)
+    item_location=fields.CharField(128)
+    item_description=fields.CharField(800)
+    Item_date=fields.CharField(128)
+
+Item_pydantic=pydantic_model_creator(items, name='items')
+ItemIn_pydantic=pydantic_model_creator(items, name='ItemsIn', exclude_readonly=True)
+
+
+
 class User(Model):
     id = fields.IntField(pk=True)
     username = fields.CharField(50, unique=True)
@@ -67,9 +79,17 @@ async def create_user(user: UserIn_Pydantic):
     await user_obj.save()
     return await User_Pydantic.from_tortoise_orm(user_obj)
 
+@app.post('/items/me', response_model=Item_pydantic)
+async def store_founditems(items: ItemIn_pydantic):
+    store_items = items(item_name=items.items_name, item_location=items.item_location, item_description=items.item_description, Item_date=items.Item_date)
+    await store_items.save()
+    return await Item_pydantic.from_tortoise_orm(store_items)
+
 @app.get('/users/me', response_model=User_Pydantic)
 async def get_user(user: User_Pydantic = Depends(get_current_user)):
-    return user    
+    return user  
+
+
 
 register_tortoise(
     app, 
